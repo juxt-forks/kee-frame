@@ -13,8 +13,7 @@
             [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [expound.alpha :as e]
-            [re-frame.core :as f]
-            [clojure.set :as set]))
+            [re-frame.core :as f]))
 
 (def default-chain-links [{:effect-present? (fn [effects] (:http-xhrio effects))
                            :get-dispatch    (fn [effects] (get-in effects [:http-xhrio :on-success]))
@@ -53,13 +52,10 @@
                   {:url    url
                    :routes routes})))
 
-(defn valid? [{:keys [path-params required]}]
-  (set/subset? required (set (keys path-params))))
-
 (defn match-data [routes route hash?]
-  (let [[_ path-params] route
-        {:keys [path] :as match} (apply reitit/match-by-name routes route)]
-    (when (valid? match)
+  (let [[_ path-params] route]
+    (when-let [path (-> (apply reitit/match-by-name routes route)
+                      (reitit/match->path))]
       (str (when hash? "/#") path
            (when-some [q (:query-string path-params)] (str "?" q))
            (when-some [h (:hash path-params)] (str "#" h))))))
